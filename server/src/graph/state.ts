@@ -7,8 +7,10 @@ export interface AgentState {
   // Planner Agent
   plan?: string;
 
+  // Who invoked tools
+  activeToolCaller?: string;
 
-// Retrieval context
+  // Retrieval context
   retrievalContext?: {
     source: string;
     content: string;
@@ -23,7 +25,8 @@ export interface AgentState {
   // Workflow status
   completed?: string;
 
-  review?: string;
+  // Review output
+  reviewResult?: string; // Review output
   validationResult?: string;
 
   retryCount?: number;
@@ -36,4 +39,6 @@ export interface AgentState {
     file: string;
     timestamp: string;
   }[];
+
+  taskType?: "frontend" | "backend" | "fullstack";
 }

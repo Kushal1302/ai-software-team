@@ -39,6 +39,7 @@ ${state.plan}
 
   return {
     currentAgent: "searcher",
+    activeToolCaller: "searcher",
     messages: [response],
     logs: [...(state.logs || []), "Searcher executed retrieval reasoning"],
   };

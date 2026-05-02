@@ -1,36 +1,44 @@
 import type { AgentState } from "../graph/state.js";
 import fs from "fs/promises";
 import { model } from "../lib/model.js";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 export async function reviewerAgent(state: AgentState) {
-  console.log("\n=== REVIEWER AGENT ===");
+  console.log("\n=== AUTONOMOUS REVIEWER ===");
 
   const reviewerPrompt = await fs.readFile(
     "./src/prompts/reviewer.txt",
     "utf-8",
   );
 
-  const response = await model.invoke(`
-${reviewerPrompt}
+  const previousMessages = state.messages || [];
 
-TASK:
-${state.task}
+  const messages = [
+    new SystemMessage(reviewerPrompt),
 
-PLAN:
-${state.plan}
+    ...previousMessages,
 
-LOGS:
-${state.logs?.join("\n")}
-`);
+    new HumanMessage(`
+      TASK:
+      ${state.task}
 
-  const review = response.content.toString();
+      PLAN:
+      ${state.plan || "No plan"}
 
-  console.log("\nREVIEW:");
-  console.log(review);
+      Please inspect git changes carefully.
+    `),
+  ];
+
+  const response = await model.invoke(messages);
+
+  console.log("\nREVIEWER RESPONSE:");
+  console.log(response);
 
   return {
-    review,
+    activeToolCaller: "reviewer",
+    messages: [response],
     currentAgent: "reviewer",
-    logs: [...(state.logs || []), "Reviewer completed analysis"],
+    reviewResult: response.content.toString(),
+    logs: [...(state.logs || []), "Reviewer completed code analysis"],
   };
 }

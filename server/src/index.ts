@@ -15,9 +15,18 @@ app.post("/ai-team", async (c: Context) => {
 
   const app = await createWorkflow();
 
-  const result = await app.invoke({
-    task: input,
-  });
+  const config = {
+    configurable: {
+      thread_id: "user-1",
+    },
+  };
+
+  const result = await app.invoke(
+    {
+      task: input,
+    },
+    config,
+  );
 
   console.log("\n==================");
 

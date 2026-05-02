@@ -1,10 +1,8 @@
 import { END } from "@langchain/langgraph";
-import type { AgentState } from "../graph/state.js";
-import { model } from "../lib/model.js";
 
-export async function repairAgent(state: AgentState) {
-  console.log("\n=== REPAIR AGENT ===");
+import type { AgentState } from "./state.js";
 
+export function repairRouter(state: AgentState) {
   const validation = state.validationResult || "";
 
   // Validation failed
@@ -18,6 +16,7 @@ export async function repairAgent(state: AgentState) {
 
       return END;
     }
+
     console.log("\nVALIDATION FAILED → RETRY");
 
     return "backend-engineer";

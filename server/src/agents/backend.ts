@@ -48,6 +48,7 @@ export async function backendAgent(
 
   return {
     currentAgent: "backend-engineer",
+    activeToolCaller: "backend-engineer",
     messages: [response],
     logs: [...(state.logs || []), "Backend engineer executed reasoning step"],
   };
