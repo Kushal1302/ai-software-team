@@ -16,6 +16,8 @@ export interface AgentState {
     content: string;
   }[];
 
+  relevantFiles?: string[];
+
   // Shared logs
   logs?: string[];
 

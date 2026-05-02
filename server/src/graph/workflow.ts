@@ -1,14 +1,5 @@
 import { MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import type { AgentState } from "./state.js";
-// import { plannerAgent } from "../agents/planner.js";
-// import { searchAgent } from "../agents/searcher.js";
-// import { supervisorRouter } from "./routing.js";
-// import { backendAgent } from "../agents/backend.js";
-// import { reviewerAgent } from "../agents/reviewer.js";
-// import { validatorAgent } from "../agents/validator.js";
-// import { repairAgent } from "../agents/repair.js";
-import { autonomousEngineerAgent } from "../agents/autonomous-engineer.js";
-import { toolRouter } from "./tool-routing.js";
 import { toolNode } from "./tool-node.js";
 import { searchAgent } from "../agents/searcher.js";
 import { plannerAgent } from "../agents/planner.js";
@@ -16,10 +7,16 @@ import { backendAgent } from "../agents/backend.js";
 import { toolReturnRouter } from "./tool-return-router.js";
 import { reviewerAgent } from "../agents/reviewer.js";
 import { validatorAgent } from "../agents/validator.js";
-import { repairRouter } from "./repair-router.js";
 import { classifierAgent } from "../agents/task-classifier.js";
 import { frontendAgent } from "../agents/frontend.js";
 import { taskRouter } from "./task-route.js";
+import { validatorRouter } from "./validator-router.js";
+import {
+  backendRouter,
+  frontendRouter,
+  reviewerRouter,
+  searcherRouter,
+} from "./agent-router.js";
 
 export async function createWorkflow() {
   const graph = new StateGraph<AgentState>({
@@ -76,28 +73,15 @@ export async function createWorkflow() {
     // flow
     .addEdge(START, "planner")
     .addEdge("planner", "searcher")
-    .addEdge("searcher", "classifier")
+    .addConditionalEdges("searcher", searcherRouter)
     // Dynamic engineer routing
     .addConditionalEdges("classifier", taskRouter)
-    .addEdge("backend-engineer", "reviewer")
-    .addEdge("frontend-engineer", "reviewer")
-    .addEdge("reviewer", "validator")
-    // Tool loops
-    .addConditionalEdges("searcher", toolRouter)
-
-    .addConditionalEdges("backend-engineer", toolRouter)
-
-    .addConditionalEdges("frontend-engineer", toolRouter)
-
-    .addConditionalEdges("reviewer", toolRouter)
-
-    .addConditionalEdges("validator", toolRouter)
-
+    .addConditionalEdges("backend-engineer", backendRouter)
+    .addConditionalEdges("frontend-engineer", frontendRouter)
+    .addConditionalEdges("reviewer", reviewerRouter)
+    .addConditionalEdges("validator", validatorRouter)
     // Tool returns
-    .addConditionalEdges("tools", toolReturnRouter)
-
-    // Repair loop
-    .addConditionalEdges("validator", repairRouter);
+    .addConditionalEdges("tools", toolReturnRouter);
 
   const memory = new MemorySaver();
 
