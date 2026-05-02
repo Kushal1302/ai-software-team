@@ -4,7 +4,7 @@ import { tools } from "../tools/index.js";
 
 // Initialize the base model without tools
 export const baseModel = new ChatGoogleGenerativeAI({
-  model: "gemini-1.5-flash-latest",
+  model: "gemini-2.5-flash-lite",
   temperature: 0,
   maxRetries: 0,
 });
