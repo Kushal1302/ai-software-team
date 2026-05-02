@@ -5,6 +5,10 @@ export const toolRouter = (state: any) => {
     ? state.messages[state.messages.length - 1]
     : null;
 
+  if (!lastMessage) {
+    return END;
+  }
+
   if (lastMessage.tool_calls?.length && "tool_calls" in lastMessage) {
     console.log("Routing to tools node", lastMessage.tool_calls[0].name);
     return "tools";

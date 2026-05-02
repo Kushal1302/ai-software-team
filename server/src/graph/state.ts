@@ -7,8 +7,9 @@ export interface AgentState {
   // Planner Agent
   plan?: string;
 
-  // Retrieved fles
-  relevantFiles?: {
+
+// Retrieval context
+  retrievalContext?: {
     source: string;
     content: string;
   }[];
@@ -29,4 +30,10 @@ export interface AgentState {
 
   // Conversation history for context (optional, can be used for more advanced implementations)
   messages?: BaseMessage[];
+
+  // Git patch history
+  patchHistory?: {
+    file: string;
+    timestamp: string;
+  }[];
 }

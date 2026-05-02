@@ -1,4 +1,4 @@
-import { START, StateGraph } from "@langchain/langgraph";
+import { MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import type { AgentState } from "./state.js";
 // import { plannerAgent } from "../agents/planner.js";
 // import { searchAgent } from "../agents/searcher.js";
@@ -10,6 +10,9 @@ import type { AgentState } from "./state.js";
 import { autonomousEngineerAgent } from "../agents/autonomous-engineer.js";
 import { toolRouter } from "./tool-routing.js";
 import { toolNode } from "./tool-node.js";
+import { searchAgent } from "../agents/searcher.js";
+import { plannerAgent } from "../agents/planner.js";
+import { backendAgent } from "../agents/backend.js";
 
 export async function createWorkflow() {
   const graph = new StateGraph<AgentState>({
@@ -20,8 +23,11 @@ export async function createWorkflow() {
       plan: {
         value: (x, y) => y ?? x,
       },
-      relevantFiles: {
-        value: (x, y) => y ?? x,
+      retrievalContext: {
+        value: (x = [], y = []) => [...x, ...y],
+      },
+      patchHistory: {
+        value: (x = [], y = []) => [...x, ...y],
       },
       currentAgent: {
         value: (x, y) => y ?? x,
@@ -30,25 +36,35 @@ export async function createWorkflow() {
         value: (x, y) => y ?? x,
       },
       logs: {
+        value: (x = [], y = []) => [...x, ...y],
+      },
+      // it wiill be array of messages
+      messages: {
+        value: (x = [], y = []) => [...x, ...y],
+      },
+      validationResult: {
+        value: (x, y) => y ?? x,
+      },
+      retryCount: {
         value: (x, y) => y ?? x,
       },
     },
   })
-    // .addNode("planner", plannerAgent)
-    // .addNode("searcher", searchAgent)
-    // .addNode("backend-engineer", backendAgent)
-    // .addNode("reviewer", reviewerAgent)
-    // .addNode("validator", validatorAgent)
-    // .addNode("repairt-agent", repairAgent)
-    // .addEdge(START, "planner")
-    // .addConditionalEdges("planner", supervisorRouter)
-    // .addConditionalEdges("searcher", supervisorRouter);
-
-    .addNode("autonomous-engineer", autonomousEngineerAgent)
+    .addNode("planner", plannerAgent)
+    .addNode("searcher", searchAgent)
+    .addNode("backend-engineer", backendAgent)
     .addNode("tools", toolNode)
-    .addEdge(START, "autonomous-engineer")
-    .addConditionalEdges("autonomous-engineer", toolRouter)
-    .addEdge("tools", "autonomous-engineer");
 
-  return graph.compile();
+    // flow
+    .addEdge(START, "planner")
+    .addEdge("planner", "searcher")
+    .addConditionalEdges("searcher", toolRouter)
+    .addEdge("tools", "backend-engineer")
+    .addConditionalEdges("backend-engineer", toolRouter);
+
+  const memory = new MemorySaver();
+
+  return graph.compile({
+    checkpointer: memory,
+  });
 }

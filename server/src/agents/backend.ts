@@ -3,6 +3,7 @@ import z from "zod/v3";
 import type { AgentState } from "../graph/state.js";
 import { model } from "../lib/model.js";
 import { patchFile } from "../tools/patch-file.js";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 const patchSchema = z.object({
   filePath: z.string(),
@@ -13,55 +14,41 @@ const patchSchema = z.object({
 export async function backendAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
-  console.log("\n=== BACKEND AGENT ===");
+  console.log("\n=== AUTONOMOUS BACKEND ENGINEER ===");
 
   // Load prompt
   const backendPrompt = await fs.readFile("./src/prompts/backend.txt", "utf-8");
 
-  // Pick first retrieved file
-  const targetFile = state.relevantFiles?.[0];
+  // Existing memory
+  const previousMessages = state.messages || [];
 
-  if (!targetFile) {
-    throw new Error("No relevant files found");
-  }
+  // Build reasoning context
+  const messages = [
+    new SystemMessage(backendPrompt),
 
-  console.log(targetFile.source);
+    ...previousMessages,
 
-  const fileContent = await fs.readFile(targetFile.source, "utf-8");
+    new HumanMessage(`
+      TASK:
+      ${state.task}
 
-  // Structured output
-  const structuredModel = model.withStructuredOutput(patchSchema);
+      PLAN:
+      ${state.plan || "No plan available"}
 
-  // Generate patch
-  const patch = await structuredModel.invoke(`
-    ${backendPrompt}
+      RETRIEVAL CONTEXT:
+      ${JSON.stringify(state.retrievalContext || [], null, 2)}
+      `),
+  ];
 
-    TASK:
-    ${state.task}
+  const response = await model.invoke(messages);
 
-    PLAN:
-    ${state.plan}
+  console.log("\nBACKEND AGENT RESPONSE:");
 
-    FILE PATH:
-    ${targetFile.source}
-
-    FILE CONTENT:
-    ${fileContent}
-    `);
-
-  console.log("\nGENERATED PATCH:");
-
-  // Apply patch
-  await patchFile({
-    filePath: patch.filePath,
-
-    oldText: patch.oldText,
-
-    newText: patch.newText,
-  });
+  console.log(response);
 
   return {
-    currentAgent: "backend",
-    logs: [...(state.logs || []), `Backend agent modified ${patch.filePath}`],
+    currentAgent: "backend-engineer",
+    messages: [response],
+    logs: [...(state.logs || []), "Backend engineer executed reasoning step"],
   };
 }
