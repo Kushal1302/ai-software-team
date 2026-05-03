@@ -22,31 +22,8 @@ import "reactflow/dist/style.css";
 import { RuntimeEvent } from "@/types/runtime";
 import { buildEdges, buildNodes } from "@/lib/build.graph";
 import { DiffEditor } from "@monaco-editor/react";
-
-export function updateNodes(nodes: Node[], activeAgent?: string): Node[] {
-  return nodes.map((node) => {
-    const isActive = node.id === activeAgent;
-    return {
-      ...node,
-      style: {
-        background: isActive
-          ? "rgba(6, 182, 212, 0.2)"
-          : "rgba(24, 24, 27, 0.8)",
-        color: isActive ? "#fff" : "#a1a1aa",
-        border: isActive ? "1px solid #22d3ee" : "1px solid #3f3f46",
-        borderRadius: "12px",
-        padding: "12px",
-        width: 180,
-        fontSize: "11px",
-        fontWeight: "600",
-        textAlign: "center",
-        boxShadow: isActive ? "0 0 30px rgba(6, 182, 212, 0.3)" : "none",
-        backdropFilter: "blur(8px)",
-        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-      },
-    };
-  });
-}
+import { ENV } from "@/lib/env";
+import { updateNodes } from "@/lib/update-nodes";
 
 export default function HomePage() {
   const [task, setTask] = useState("");
@@ -73,7 +50,7 @@ export default function HomePage() {
   }, [logs]);
 
   useEffect(() => {
-    const eventSource = new EventSource("http://localhost:3001/events");
+    const eventSource = new EventSource(`${ENV.API_BASE_URL}/events`);
     eventSource.addEventListener("runtime-event", (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "agent") setActiveAgent(data.agentId);
@@ -85,7 +62,7 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadGraph() {
-      const response = await fetch("http://localhost:3001/graph");
+      const response = await fetch(`${ENV.API_BASE_URL}/graph`);
       const data = await response.json();
       setBaseNodes(buildNodes(data.nodes));
       setEdges(buildEdges(data.edges));
@@ -97,7 +74,7 @@ export default function HomePage() {
     if (!task || loading) return;
     setLoading(true);
     try {
-      await fetch("http://localhost:3001/ai-team", {
+      await fetch(`${ENV.API_BASE_URL}/ai-team`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task }),
@@ -261,7 +238,7 @@ export default function HomePage() {
                   minimap: { enabled: false },
                   scrollBeyondLastLine: false,
                   lineNumbers: "on",
-                  scrollbar: { verticalSliderSize: 5, horizontalSliderSize: 5 },
+                  scrollbar: { verticalSliderSize: 1, horizontalSliderSize: 5 },
                 }}
               />
             ) : (
