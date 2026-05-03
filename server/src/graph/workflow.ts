@@ -67,6 +67,12 @@ export async function createWorkflow() {
       activeToolCaller: {
         value: (x, y) => y ?? x,
       },
+      intent: {
+        value: (x, y) => y ?? x,
+      },
+      answer: {
+        value: (x, y) => y ?? x,
+      },
     },
   })
     .addNode("planner", plannerAgent)

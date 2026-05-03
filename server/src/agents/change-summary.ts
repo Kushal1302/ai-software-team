@@ -24,6 +24,7 @@ ${state.task}
   return {
     answer: response.content.toString(),
     currentAgent: "change-summary",
+    activeToolCaller: "change-summary",
     messages: [humanMessage, response],
     logs: [...(state.logs || []), "Summarized current git diff"],
   };
