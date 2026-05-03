@@ -262,15 +262,15 @@ export default function DocsPage() {
             <div className="font-mono text-[11px] text-zinc-400 bg-black/20 p-4 rounded-lg border border-white/5">
               <span className="text-purple-400">type</span>{" "}
               <span className="text-white">RuntimeEvent</span> = <br />
-              &nbsp;&nbsp;|{" "}
-              <span className="text-cyan-400">&quot;agent&quot;</span> |{" "}
-              <span className="text-cyan-400">&quot;tool&quot;</span> <br />
-              &nbsp;&nbsp;|{" "}
-              <span className="text-cyan-400">&quot;terminal&quot;</span> |{" "}
-              <span className="text-cyan-400">&quot;diff&quot;</span> <br />
-              &nbsp;&nbsp;|{" "}
-              <span className="text-cyan-400">&quot;approval&quot;</span> |{" "}
-              <span className="text-cyan-400">&quot;log&quot;</span>;
+              &nbsp;&nbsp;| <span className="text-cyan-400">
+                &quot;agent&quot;
+              </span> | <span className="text-cyan-400">&quot;tool&quot;</span> <br />
+              &nbsp;&nbsp;| <span className="text-cyan-400">
+                &quot;terminal&quot;
+              </span> | <span className="text-cyan-400">&quot;diff&quot;</span> <br />
+              &nbsp;&nbsp;| <span className="text-cyan-400">
+                &quot;approval&quot;
+              </span> | <span className="text-cyan-400">&quot;log&quot;</span>;
             </div>
             <p className="mt-4 text-[10px] text-zinc-500 uppercase tracking-widest">
               Real-time streaming via Server-Sent Events (SSE)
@@ -315,15 +315,7 @@ export default function DocsPage() {
 
         {/* CALL TO ACTION */}
         <div className="flex flex-col items-center justify-center pt-20 pb-10 space-y-6">
-          <div
-            onClick={() =>
-              window.open(
-                "https://github.com/Kushal1302/ai-software-team",
-                "_blank",
-              )
-            }
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-bold text-sm cursor-pointer hover:bg-cyan-400 transition-all"
-          >
+          <div onClick={() => window.open("https://github.com/Kushal1302/ai-software-team", "_blank")} className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-bold text-sm cursor-pointer hover:bg-cyan-400 transition-all">
             <Star className="w-4 h-4 fill-black" />
             <span>STAR REPOSITORY ON GITHUB</span>
           </div>
