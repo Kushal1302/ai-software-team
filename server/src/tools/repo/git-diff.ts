@@ -12,7 +12,7 @@ export const gitDiffTool = tool(
     return result.stdout;
   },
   {
-    name: "git-diff",
+    name: "git_diff",
     description: `
     Get current git diff.
     Use for code review.

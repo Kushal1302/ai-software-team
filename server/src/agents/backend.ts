@@ -22,13 +22,7 @@ export async function backendAgent(
   // Existing memory
   const previousMessages = state.messages || [];
 
-  // Build reasoning context
-  const messages = [
-    new SystemMessage(backendPrompt),
-
-    ...previousMessages,
-
-    new HumanMessage(`
+  const humanMessage = new HumanMessage(`
       TASK:
       ${state.task}
 
@@ -37,7 +31,15 @@ export async function backendAgent(
 
       RETRIEVAL CONTEXT:
       ${JSON.stringify(state.retrievalContext || [], null, 2)}
-      `),
+      `);
+
+  // Build reasoning context
+  const messages = [
+    new SystemMessage(backendPrompt),
+
+    ...previousMessages,
+
+    humanMessage,
   ];
 
   const response = await model.invoke(messages);
@@ -49,7 +51,7 @@ export async function backendAgent(
   return {
     currentAgent: "backend-engineer",
     activeToolCaller: "backend-engineer",
-    messages: [response],
+    messages: [humanMessage, response],
     logs: [...(state.logs || []), "Backend engineer executed reasoning step"],
   };
 }

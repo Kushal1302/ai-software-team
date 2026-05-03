@@ -13,12 +13,7 @@ export async function reviewerAgent(state: AgentState) {
 
   const previousMessages = state.messages || [];
 
-  const messages = [
-    new SystemMessage(reviewerPrompt),
-
-    ...previousMessages,
-
-    new HumanMessage(`
+  const humanMessage = new HumanMessage(`
       TASK:
       ${state.task}
 
@@ -26,8 +21,9 @@ export async function reviewerAgent(state: AgentState) {
       ${state.plan || "No plan"}
 
       Please inspect git changes carefully.
-    `),
-  ];
+    `);
+
+  const messages = [new SystemMessage(reviewerPrompt), ...previousMessages, humanMessage];
 
   const response = await model.invoke(messages);
 
@@ -36,7 +32,7 @@ export async function reviewerAgent(state: AgentState) {
 
   return {
     activeToolCaller: "reviewer",
-    messages: [response],
+    messages: [humanMessage, response],
     currentAgent: "reviewer",
     reviewResult: response.content.toString(),
     logs: [...(state.logs || []), "Reviewer completed code analysis"],

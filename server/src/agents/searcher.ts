@@ -16,19 +16,21 @@ export async function searchAgent(
   // Existing messages
   const previousMessages = state.messages || [];
 
+  const humanMessage = new HumanMessage(`
+TASK:
+${state.task}
+
+PLAN:
+${state.plan}
+`);
+
   // Create reasoning context
   const messages = [
     new SystemMessage(prompt),
 
     ...previousMessages,
 
-    new HumanMessage(`
-TASK:
-${state.task}
-
-PLAN:
-${state.plan}
-`),
+    humanMessage,
   ];
 
   // Invoke model
@@ -40,7 +42,7 @@ ${state.plan}
   return {
     currentAgent: "searcher",
     activeToolCaller: "searcher",
-    messages: [response],
+    messages: [humanMessage, response],
     logs: [...(state.logs || []), "Searcher executed retrieval reasoning"],
   };
 }

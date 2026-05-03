@@ -16,13 +16,14 @@ export async function classifierAgent(
     "utf-8",
   );
 
-  const response = await model.invoke([
-    new SystemMessage(classifierPrompt),
-
-    new HumanMessage(`
+  const humanMessage = new HumanMessage(`
 TASK:
 ${state.task}
-`),
+`);
+
+  const response = await model.invoke([
+    new SystemMessage(classifierPrompt),
+    humanMessage,
   ]);
 
   const classification = response.content.toString().trim().toLowerCase();
@@ -34,7 +35,7 @@ ${state.task}
   return {
     currentAgent: "classifier",
     logs: [...(state.logs || []), `Task classified as ${classification}`],
-    messages: [response],
+    messages: [humanMessage, response],
     taskType: classification as any,
   };
 }

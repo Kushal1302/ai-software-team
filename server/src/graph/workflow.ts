@@ -18,6 +18,9 @@ import {
   searcherRouter,
 } from "./agent-router.js";
 
+// Initialize a single instance of MemorySaver to be used across the workflow
+const memory = new MemorySaver();
+
 export async function createWorkflow() {
   const graph = new StateGraph<AgentState>({
     channels: {
@@ -82,8 +85,6 @@ export async function createWorkflow() {
     .addConditionalEdges("validator", validatorRouter)
     // Tool returns
     .addConditionalEdges("tools", toolReturnRouter);
-
-  const memory = new MemorySaver();
 
   return graph.compile({
     checkpointer: memory,

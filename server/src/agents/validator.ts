@@ -15,12 +15,7 @@ export async function validatorAgent(
 
   const previousMessages = state.messages || [];
 
-  const messages = [
-    new SystemMessage(validatorPrompt),
-
-    ...previousMessages,
-
-    new HumanMessage(`
+  const humanMessage = new HumanMessage(`
       TASK:
       ${state.task}
 
@@ -28,7 +23,12 @@ export async function validatorAgent(
       ${state.reviewResult || "No review"}
 
       Run validation carefully.
-    `),
+    `);
+
+  const messages = [
+    new SystemMessage(validatorPrompt),
+    ...previousMessages,
+    humanMessage,
   ];
 
   const response = await model.invoke(messages);
@@ -41,7 +41,7 @@ export async function validatorAgent(
     validationResult: validationText,
     currentAgent: "validator",
     activeToolCaller: "validator",
-    messages: [response],
+    messages: [humanMessage, response],
     retryCount: (state.retryCount || 0) + 1,
     logs: [...(state.logs || []), "Validator executed validation workflow"],
   };

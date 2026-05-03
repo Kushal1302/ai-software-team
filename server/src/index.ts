@@ -1,6 +1,10 @@
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { Hono, type Context } from "hono";
 import { createWorkflow } from "./graph/workflow.js";
+
+// Create a single instance of the workflow to be used across all requests
+const workflow = await createWorkflow();
 
 const app = new Hono();
 
@@ -13,15 +17,14 @@ app.get("/", (c) => {
 app.post("/ai-team", async (c: Context) => {
   const { input } = await c.req.json();
 
-  const app = await createWorkflow();
-
   const config = {
     configurable: {
       thread_id: "user-1",
     },
+    recursionLimit: 50,
   };
 
-  const result = await app.invoke(
+  const result = await workflow.invoke(
     {
       task: input,
     },

@@ -18,12 +18,7 @@ export async function frontendAgent(
 
   const previousMessages = state.messages || [];
 
-  const messages = [
-    new SystemMessage(frontendPrompt),
-
-    ...previousMessages,
-
-    new HumanMessage(`
+  const humanMessage = new HumanMessage(`
         TASK:
         ${state.task}
 
@@ -32,8 +27,9 @@ export async function frontendAgent(
 
         RETRIEVAL CONTEXT:
         ${JSON.stringify(state.retrievalContext || [], null, 2)}
-    `),
-  ];
+    `);
+
+  const messages = [new SystemMessage(frontendPrompt), ...previousMessages, humanMessage];
 
   const response = await model.invoke(messages);
 
@@ -44,7 +40,7 @@ export async function frontendAgent(
   return {
     currentAgent: "frontend-engineer",
     activeToolCaller: "frontend-engineer",
-    messages: [response],
+    messages: [humanMessage, response],
     logs: [...(state.logs || []), "Frontend engineer executed reasoning step"],
   };
 }
