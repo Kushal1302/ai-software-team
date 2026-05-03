@@ -2,6 +2,7 @@ import type { AgentState } from "../graph/state.js";
 import fs from "fs/promises";
 import { model } from "../lib/model.js";
 import { runtimeEventEmitter } from "../events/eventEmitter.js";
+import { retrieveMemories } from "../memory/retrieve-memory.js";
 
 export async function plannerAgent(
   state: AgentState,
@@ -20,12 +21,19 @@ export async function plannerAgent(
 
   console.log({ plannerPrompt, task: state.task });
 
+  // before agents start working on the task, retrieve relevant memories to inform the plan
+  const memories = await retrieveMemories(state.task);
+
   // invoke model
   const response = await model.invoke(`
     ${plannerPrompt}
     
     TASK:
-    ${state.task}`);
+    ${state.task}
+    
+    MEMORIES:
+    ${memories.join("\n")}
+    `);
 
   console.log("\nRESPONSE:");
   console.log(response.content);

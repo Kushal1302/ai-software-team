@@ -6,12 +6,13 @@ export const runtimeEventEmitter = ({
   type,
   agentId,
   message,
+  approvalId,
 }: Partial<RuntimeEvent>) => {
   eventBus.emit("runtime-event", {
     type: type,
     agentId: agentId,
     message: message,
-
+    approvalId: approvalId,
     timestamp: new Date().toISOString(),
   });
 };

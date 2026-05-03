@@ -10,6 +10,8 @@ import type { RuntimeEvent } from "./events/types.js";
 import { graphEdges, graphNodes } from "./graph/graph-config.js";
 import { runtimeEventEmitter } from "./events/eventEmitter.js";
 import { pendingApprovals } from "./runtime/approval-store.js";
+import { extractMemory } from "./memory/extract-memory.js";
+import { storeMemory } from "./memory/store-memory.js";
 
 // Create a single instance of the workflow to be used across all requests
 const workflow = await createWorkflow();
@@ -74,6 +76,16 @@ app.post("/ai-team", async (c: Context) => {
     depth: null,
   });
 
+  // extract and store important reusable engineering knowledge from the execution
+  const extracted = await extractMemory(
+    result.task as string,
+    result.logs as string[],
+  );
+
+  if (extracted) {
+    await storeMemory(extracted);
+  }
+
   return c.json({
     task: result.task,
     taskType: result.taskType,
@@ -98,7 +110,7 @@ app.get("/graph", async (c) => {
   });
 });
 
-app.post("/approve", async (c) => {
+app.post("/approval", async (c) => {
   try {
     const body = await c.req.json();
 
