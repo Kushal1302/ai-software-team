@@ -3,7 +3,7 @@ import type { AgentState } from "../graph/state.js";
 import { searchRepository } from "../vector/retriever.js";
 import { vectorStore } from "../vector/store.js";
 import fs from "fs/promises";
-import { model } from "../lib/model.js";
+import { model, searchModel } from "../lib/model.js";
 import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function searchAgent(
@@ -41,7 +41,7 @@ ${state.plan}
   ];
 
   // Invoke model
-  const response = await model.invoke(messages);
+  const response = await searchModel.invoke(messages);
 
   console.log("\nSEARCHER RESPONSE:");
   console.log(response);

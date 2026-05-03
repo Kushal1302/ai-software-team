@@ -8,6 +8,7 @@
     "start:agent": "tsx src/index.ts"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
     "@hono/node-server": "^1.19.14",
     "@langchain/community": "^1.1.27",
     "@langchain/core": "^1.1.42",

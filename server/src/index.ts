@@ -77,14 +77,14 @@ app.post("/ai-team", async (c: Context) => {
   });
 
   // extract and store important reusable engineering knowledge from the execution
-  const extracted = await extractMemory(
-    result.task as string,
-    result.logs as string[],
-  );
+  // const extracted = await extractMemory(
+  //   result.task as string,
+  //   result.logs as string[],
+  // );
 
-  if (extracted) {
-    await storeMemory(extracted);
-  }
+  // if (extracted) {
+  //   await storeMemory(extracted);
+  // }
 
   return c.json({
     task: result.task,
