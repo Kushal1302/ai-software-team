@@ -5,11 +5,18 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
 
 import { model } from "../lib/model.js";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function frontendAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== AUTONOMOUS FRONTEND ENGINEER ===");
+
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "frontend-engineer",
+    message: "Frontend engineer agent started implementation reasoning.",
+  });
 
   const frontendPrompt = await fs.readFile(
     "./src/prompts/frontend.txt",
@@ -29,13 +36,22 @@ export async function frontendAgent(
         ${JSON.stringify(state.retrievalContext || [], null, 2)}
     `);
 
-  const messages = [new SystemMessage(frontendPrompt), ...previousMessages, humanMessage];
+  const messages = [
+    new SystemMessage(frontendPrompt),
+    ...previousMessages,
+    humanMessage,
+  ];
 
   const response = await model.invoke(messages);
 
   console.log("\nFRONTEND RESPONSE:");
 
   console.log(response);
+
+  runtimeEventEmitter({
+    type: "log",
+    message: "Frontend engineer agent completed implementation reasoning.",
+  });
 
   return {
     currentAgent: "frontend-engineer",

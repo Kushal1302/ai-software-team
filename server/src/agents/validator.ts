@@ -2,11 +2,18 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
 import fs from "fs/promises";
 import { model } from "../lib/model.js";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function validatorAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== AUTONOMOUS VALIDATOR ===");
+
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "validator",
+    message: "Validator agent started validation workflow",
+  });
 
   const validatorPrompt = await fs.readFile(
     "./src/prompts/validator.txt",
@@ -36,6 +43,11 @@ export async function validatorAgent(
   console.log(response);
 
   const validationText = response.content.toString();
+
+  runtimeEventEmitter({
+    type: "log",
+    message: "Validator agent completed validation workflow.",
+  });
 
   return {
     validationResult: validationText,

@@ -4,11 +4,18 @@ import { searchRepository } from "../vector/retriever.js";
 import { vectorStore } from "../vector/store.js";
 import fs from "fs/promises";
 import { model } from "../lib/model.js";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function searchAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== AUTONOMOUS SEARCHER ===");
+
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "searcher",
+    message: "Searcher agent started retrieval reasoning.",
+  });
 
   // Load prompt
   const prompt = await fs.readFile("./src/prompts/searcher.txt", "utf-8");
@@ -38,6 +45,11 @@ ${state.plan}
 
   console.log("\nSEARCHER RESPONSE:");
   console.log(response);
+
+  runtimeEventEmitter({
+    type: "log",
+    message: "Searcher agent completed retrieval reasoning.",
+  });
 
   return {
     currentAgent: "searcher",

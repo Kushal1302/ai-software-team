@@ -4,6 +4,7 @@ import type { AgentState } from "../graph/state.js";
 import { model } from "../lib/model.js";
 import { patchFile } from "../tools/patch-file.js";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 const patchSchema = z.object({
   filePath: z.string(),
@@ -15,6 +16,12 @@ export async function backendAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== AUTONOMOUS BACKEND ENGINEER ===");
+
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "backend-engineer",
+    message: "Backend engineer agent started implementation reasoning.",
+  });
 
   // Load prompt
   const backendPrompt = await fs.readFile("./src/prompts/backend.txt", "utf-8");
@@ -47,6 +54,11 @@ export async function backendAgent(
   console.log("\nBACKEND AGENT RESPONSE:");
 
   console.log(response);
+
+  runtimeEventEmitter({
+    type: "log",
+    message: "Backend engineer agent completed implementation reasoning.",
+  });
 
   return {
     currentAgent: "backend-engineer",

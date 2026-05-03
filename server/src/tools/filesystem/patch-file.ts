@@ -1,9 +1,14 @@
 import { tool } from "@langchain/core/tools";
 import z from "zod";
 import fs from "fs/promises";
+import { runtimeEventEmitter } from "../../events/eventEmitter.js";
 
 export const patchFileTool = tool(
   async ({ filePath, oldText, newText }) => {
+    runtimeEventEmitter({
+      type: "tool",
+      message: "Patch file tool executed.",
+    });
     const original = await fs.readFile(filePath, "utf8");
 
     if (!original.includes(oldText)) {

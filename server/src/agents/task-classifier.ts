@@ -5,11 +5,18 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
 
 import { model } from "../lib/model.js";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function classifierAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== TASK CLASSIFIER ===");
+
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "classifier",
+    message: "Classifier agent started classification reasoning.",
+  });
 
   const classifierPrompt = await fs.readFile(
     "./src/prompts/classifier.txt",
@@ -31,6 +38,11 @@ ${state.task}
   console.log("\nCLASSIFICATION:");
 
   console.log(classification);
+
+  runtimeEventEmitter({
+    type: "log",
+    message: `Task classified as ${classification}`,
+  });
 
   return {
     currentAgent: "classifier",

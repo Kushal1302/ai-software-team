@@ -1,11 +1,19 @@
 import type { AgentState } from "../graph/state.js";
 import fs from "fs/promises";
 import { model } from "../lib/model.js";
+import { runtimeEventEmitter } from "../events/eventEmitter.js";
 
 export async function plannerAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== PLANNER AGENT ===");
+
+  // emit event
+  runtimeEventEmitter({
+    type: "agent",
+    agentId: "planner",
+    message: "Planner agent started task decomposition.",
+  });
 
   // load prompt
   const plannerPrompt = await fs.readFile("./src/prompts/planner.txt", "utf8");
@@ -27,6 +35,11 @@ export async function plannerAgent(
 
   console.log("\nPLAN:");
   console.log(plan);
+
+  runtimeEventEmitter({
+    type: "log",
+    message: "Planner agent completed task decomposition." + plan,
+  });
 
   return {
     plan,
