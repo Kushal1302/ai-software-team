@@ -2,6 +2,7 @@ import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { Hono, type Context } from "hono";
 import { createWorkflow } from "./graph/workflow.js";
+import { authMiddleware } from "./middleware/auth.js";
 
 // Create a single instance of the workflow to be used across all requests
 const workflow = await createWorkflow();
@@ -13,6 +14,8 @@ app.onError((error, c) => c.json({ message: error.message }));
 app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
+
+app.use("/ai-team", authMiddleware);
 
 app.post("/ai-team", async (c: Context) => {
   const { input } = await c.req.json();
@@ -41,7 +44,19 @@ app.post("/ai-team", async (c: Context) => {
     depth: null,
   });
 
-  return c.json(result);
+  return c.json({
+    task: result.task,
+    taskType: result.taskType,
+    currentAgent: result.currentAgent,
+    plan: result.plan,
+    reviewResult: result.reviewResult,
+    validationResult: result.validationResult,
+    retryCount: result.retryCount,
+    // logs: result.logs?.slice(-20),
+    relevantFiles: result.relevantFiles,
+    retrievalContext: result.retrievalContext,
+    patchHistory: result.patchHistory,
+  });
 });
 
 serve(

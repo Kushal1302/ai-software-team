@@ -13,10 +13,15 @@ import { taskRouter } from "./task-route.js";
 import { validatorRouter } from "./validator-router.js";
 import {
   backendRouter,
+  changeSummaryRouter,
   frontendRouter,
   reviewerRouter,
   searcherRouter,
 } from "./agent-router.js";
+import { intentClassifierAgent } from "../agents/intent-classifier.js";
+import { answerAgent } from "../agents/answer.js";
+import { changeSummaryAgent } from "../agents/change-summary.js";
+import { intentRouter } from "./intent-router.js";
 
 // Initialize a single instance of MemorySaver to be used across the workflow
 const memory = new MemorySaver();
@@ -72,9 +77,15 @@ export async function createWorkflow() {
     .addNode("frontend-engineer", frontendAgent)
     .addNode("backend-engineer", backendAgent)
     .addNode("tools", toolNode)
+    .addNode("intent-classifier", intentClassifierAgent)
+    .addNode("answer-agent", answerAgent)
+    .addNode("change-summary", changeSummaryAgent)
 
     // flow
-    .addEdge(START, "planner")
+    .addEdge(START, "intent-classifier")
+    .addConditionalEdges("intent-classifier", intentRouter)
+    .addConditionalEdges("change-summary", changeSummaryRouter)
+    // .addEdge(START, "planner")
     .addEdge("planner", "searcher")
     .addConditionalEdges("searcher", searcherRouter)
     // Dynamic engineer routing

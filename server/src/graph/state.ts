@@ -4,6 +4,10 @@ export interface AgentState {
   // User task
   task: string;
 
+  // Inferred intent from the task
+  intent?: "coding_task" | "change_summary" | "question";
+
+  answer?: string;
   // Planner Agent
   plan?: string;
 

@@ -1,3 +1,4 @@
+import { END } from "@langchain/langgraph";
 import type { AgentState } from "./state.js";
 
 function hasToolCall(state: AgentState) {
@@ -37,3 +38,11 @@ export function reviewerRouter(state: AgentState) {
 
   return "validator";
 }
+
+export const changeSummaryRouter = (state: AgentState) => {
+  if (hasToolCall(state)) {
+    return "tools";
+  }
+
+  return END;
+};
