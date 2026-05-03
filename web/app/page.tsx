@@ -33,6 +33,7 @@ export default function HomePage() {
   const [baseNodes, setBaseNodes] = useState<Node[]>([]);
   const [diff, setDiff] = useState("");
   const [edges, setEdges] = useState<Edge[]>([]);
+  const [approval, setApproval] = useState<RuntimeEvent | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const nodes = useMemo(
@@ -55,6 +56,9 @@ export default function HomePage() {
       const data = JSON.parse(event.data);
       if (data.type === "agent") setActiveAgent(data.agentId);
       if (data.type === "diff") setDiff(data.message);
+      if (data.type === "approval") {
+        setApproval(data);
+      }
       setLogs((prev) => [...prev, data]);
     });
     return () => eventSource.close();
@@ -84,6 +88,30 @@ export default function HomePage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleApproval(approved: boolean) {
+    if (!approval) return;
+
+    try {
+      await fetch(`${ENV.API_BASE_URL}/approval`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          id: approval.approvalId,
+
+          approved,
+        }),
+      });
+
+      setApproval(null);
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -275,6 +303,35 @@ export default function HomePage() {
           border: 1px solid #27272a !important;
         }
       `}</style>
+      {approval && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center">
+          <div className="w-[600px] bg-zinc-900 border border-red-500/20 rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-red-400">
+              Approval Required
+            </h2>
+
+            <p className="mt-4 text-zinc-300 whitespace-pre-wrap">
+              {approval.message}
+            </p>
+
+            <div className="mt-8 flex justify-end gap-4">
+              <button
+                onClick={() => handleApproval(false)}
+                className="px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700"
+              >
+                Reject
+              </button>
+
+              <button
+                onClick={() => handleApproval(true)}
+                className="px-5 py-3 rounded-xl bg-red-500 text-white hover:bg-red-400"
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
