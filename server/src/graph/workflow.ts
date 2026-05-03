@@ -1,4 +1,4 @@
-import { MemorySaver, START, StateGraph } from "@langchain/langgraph";
+import { END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import type { AgentState } from "./state.js";
 import { toolNode } from "./tool-node.js";
 import { searchAgent } from "../agents/searcher.js";
@@ -91,6 +91,7 @@ export async function createWorkflow() {
     .addEdge(START, "intent-classifier")
     .addConditionalEdges("intent-classifier", intentRouter)
     .addConditionalEdges("change-summary", changeSummaryRouter)
+    .addEdge("answer-agent", END)
     // .addEdge(START, "planner")
     .addEdge("planner", "searcher")
     .addConditionalEdges("searcher", searcherRouter)

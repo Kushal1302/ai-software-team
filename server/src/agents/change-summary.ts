@@ -3,11 +3,19 @@ import util from "util";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
 import { model } from "../lib/model.js";
+import { eventBus } from "../events/event-bus.js";
 
 export async function changeSummaryAgent(
   state: AgentState,
 ): Promise<Partial<AgentState>> {
   console.log("\n=== CHANGE SUMMARY ===");
+
+  eventBus.emit("runtime-event", {
+    type: "agent",
+    agentId: "change-summary",
+    message: "Change summary agent invoked with task: " + state.task,
+    timestamp: new Date().toISOString(),
+  });
 
   const humanMessage = new HumanMessage(`
 USER ASKED:
@@ -26,6 +34,13 @@ ${state.task}
     response.content.toString(),
   );
   console.log(response);
+
+  eventBus.emit("runtime-event", {
+    type: "log",
+    agentId: "change-summary",
+    message: "Change summary agent completed",
+    timestamp: new Date().toISOString(),
+  });
 
   return {
     answer: response.content.toString(),
