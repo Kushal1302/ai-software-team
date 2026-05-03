@@ -8,6 +8,8 @@ import { streamSSE } from "hono/streaming";
 import { eventBus } from "./events/event-bus.js";
 import type { RuntimeEvent } from "./events/types.js";
 import { graphEdges, graphNodes } from "./graph/graph-config.js";
+import { runtimeEventEmitter } from "./events/eventEmitter.js";
+import { pendingApprovals } from "./runtime/approval-store.js";
 
 // Create a single instance of the workflow to be used across all requests
 const workflow = await createWorkflow();
@@ -16,7 +18,13 @@ const app = new Hono();
 // CORS should be called before the route
 app.use("/*", cors());
 
-app.onError((error, c) => c.json({ message: error.message }));
+app.onError((error, c) => {
+  runtimeEventEmitter({
+    type: "error",
+    message: error.message,
+  });
+  return c.json({ message: error.message }, 500);
+});
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");
@@ -88,6 +96,41 @@ app.get("/graph", async (c) => {
 
     edges: graphEdges,
   });
+});
+
+app.post("/approve", async (c) => {
+  try {
+    const body = await c.req.json();
+
+    const request = pendingApprovals.get(body.id);
+
+    if (!request) {
+      return c.json(
+        {
+          success: false,
+          error: "Approval not found",
+        },
+        404,
+      );
+    }
+
+    request.resolve(body.approved);
+
+    pendingApprovals.delete(body.id);
+
+    return c.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return c.json(
+      {
+        success: false,
+      },
+      500,
+    );
+  }
 });
 
 serve(
