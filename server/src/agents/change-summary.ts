@@ -18,8 +18,14 @@ ${state.task}
     new SystemMessage(
       "Summarize the current git diff clearly. Mention changed files and what changed. If there are no changes, say that.",
     ),
+    ...(state.messages || []),
     humanMessage,
   ]);
+  console.log(
+    "Model response for change summary:",
+    response.content.toString(),
+  );
+  console.log(response);
 
   return {
     answer: response.content.toString(),

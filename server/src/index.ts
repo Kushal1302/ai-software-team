@@ -56,6 +56,7 @@ app.post("/ai-team", async (c: Context) => {
     relevantFiles: result.relevantFiles,
     retrievalContext: result.retrievalContext,
     patchHistory: result.patchHistory,
+    answer: result.answer,
   });
 });
 
