@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import {
   Send,
   Cpu,
@@ -29,7 +29,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 type ActiveTabType = "graph" | "terminal" | "diff";
 
-export default function HomePage() {
+// 1. Move all the page logic into a nested content component
+function ChatPageContent() {
   const [task, setTask] = useState("");
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<RuntimeEvent[]>([]);
@@ -40,6 +41,8 @@ export default function HomePage() {
   const [approval, setApproval] = useState<RuntimeEvent | null>(null);
 
   const router = useRouter();
+
+  // useSearchParams safe call inside a component that will be wrapped in Suspense
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") as ActiveTabType;
 
@@ -148,7 +151,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Dynamic Responsive Tab Controls (Visible on Tablet/Mobile, Hidden on Large Screens) */}
+        {/* Dynamic Responsive Tab Controls */}
         <div className="flex lg:hidden w-full bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80">
           <button
             onClick={() => {
@@ -348,8 +351,6 @@ export default function HomePage() {
                     domReadOnly: true,
                     fontSize: 11,
                     minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    lineNumbers: "on",
                     scrollbar: {
                       verticalSliderSize: 1,
                       horizontalSliderSize: 5,
@@ -392,7 +393,7 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* SYSTEM APPROVAL OVERLAY (Fully Mobile-Friendly Dialog) */}
+      {/* SYSTEM APPROVAL OVERLAY */}
       {approval && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
           <div className="w-full max-w-[550px] bg-zinc-900 border border-red-500/20 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -423,5 +424,23 @@ export default function HomePage() {
         </div>
       )}
     </main>
+  );
+}
+
+// 2. Wrap the sub-component with Suspense for static prerendering
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-[#050505] text-zinc-400">
+          <Activity className="w-6 h-6 animate-spin text-cyan-400 mr-2" />
+          <span className="text-sm font-mono tracking-widest uppercase">
+            Loading workspace...
+          </span>
+        </div>
+      }
+    >
+      <ChatPageContent />
+    </Suspense>
   );
 }
