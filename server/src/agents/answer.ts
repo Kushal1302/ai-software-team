@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
-import { model } from "../lib/model.js";
+import { answerModel } from "../lib/model.js";
 import { eventBus } from "../events/event-bus.js";
 
 export async function answerAgent(
@@ -16,6 +16,10 @@ export async function answerAgent(
 
     timestamp: new Date().toISOString(),
   });
+
+  const prompt = await fs.readFile("./src/prompts/answer.txt", "utf-8");
+
+  console.log({prompt});
 
   const humanMessage = new HumanMessage(`
 QUESTION:
@@ -34,10 +38,8 @@ ${JSON.stringify(
 )}
 `);
 
-  const response = await model.invoke([
-    new SystemMessage(
-      "You answer questions about this coding assistant clearly and concisely. Do not modify files.",
-    ),
+  const response = await answerModel.invoke([
+    new SystemMessage(prompt),
     ...(state.messages || []),
     humanMessage,
   ]);
@@ -54,6 +56,7 @@ ${JSON.stringify(
   return {
     answer: response.content.toString(),
     currentAgent: "answer-agent",
+    activeToolCaller: "answer-agent",
     messages: [humanMessage, response],
     logs: [...(state.logs || []), "Answered user question"],
   };

@@ -12,6 +12,7 @@ import { frontendAgent } from "../agents/frontend.js";
 import { taskRouter } from "./task-route.js";
 import { validatorRouter } from "./validator-router.js";
 import {
+  answerRouter,
   backendRouter,
   changeSummaryRouter,
   frontendRouter,
@@ -91,7 +92,7 @@ export async function createWorkflow() {
     .addEdge(START, "intent-classifier")
     .addConditionalEdges("intent-classifier", intentRouter)
     .addConditionalEdges("change-summary", changeSummaryRouter)
-    .addEdge("answer-agent", END)
+    .addConditionalEdges("answer-agent", answerRouter)
     // .addEdge(START, "planner")
     .addEdge("planner", "searcher")
     .addConditionalEdges("searcher", searcherRouter)

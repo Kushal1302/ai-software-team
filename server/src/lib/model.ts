@@ -4,6 +4,7 @@ import { tools } from "../tools/index.js";
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import { readFileTool } from "../tools/filesystem/read-file.js";
 import { searchCodeTool } from "../tools/retrieval/search-code.js";
+import { searchWebTool } from "../tools/retrieval/search-web.js";
 
 // Initialize the base model without tools
 export const baseModel = new ChatGoogleGenerativeAI({
@@ -22,3 +23,5 @@ export const baseModel = new ChatGoogleGenerativeAI({
 export const model = baseModel.bindTools(tools);
 
 export const searchModel = baseModel.bindTools([readFileTool, searchCodeTool]);
+
+export const answerModel = baseModel.bindTools([searchWebTool]);

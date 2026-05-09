@@ -46,3 +46,11 @@ export const changeSummaryRouter = (state: AgentState) => {
 
   return END;
 };
+
+export const answerRouter = (state: AgentState) => {
+  if (hasToolCall(state)) {
+    return "tools";
+  }
+
+  return END;
+};
