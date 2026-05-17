@@ -2,6 +2,7 @@ import { tool } from "@langchain/core/tools";
 import z from "zod";
 import { runtimeEventEmitter } from "../../events/eventEmitter.js";
 import { tavilyClient } from "../../lib/tavily.js";
+import { interrupt } from "@langchain/langgraph";
 
 export const searchWebTool = tool(
   async ({ query }) => {
@@ -10,6 +11,16 @@ export const searchWebTool = tool(
       type: "tool",
       message: `Searching web: ${query}`,
     });
+
+    const approved = interrupt({
+      type: "approval",
+      tool: "search_web",
+      message: `We are about to search the web for: ${query}. Do you want to proceed?`,
+    });
+
+    if (!approved) {
+      return "Web search cancelled by user.";
+    }
 
     const response = await tavilyClient.search(query, {
       searchDepth: "advanced",

@@ -29,7 +29,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 type ActiveTabType = "graph" | "terminal" | "diff";
 
-// 1. Move all the page logic into a nested content component
 function ChatPageContent() {
   const [task, setTask] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,12 +40,8 @@ function ChatPageContent() {
   const [approval, setApproval] = useState<RuntimeEvent | null>(null);
 
   const router = useRouter();
-
-  // useSearchParams safe call inside a component that will be wrapped in Suspense
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") as ActiveTabType;
-
-  // Mobile / Tablet Tab System state
   const activeTab = initialTab || "graph";
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -108,23 +103,36 @@ function ChatPageContent() {
 
   async function handleApproval(approved: boolean) {
     if (!approval) return;
-
     try {
       await fetch(`${ENV.API_BASE_URL}/approval`, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           id: approval.approvalId,
-
           approved,
         }),
       });
-
       setApproval(null);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleInterrupt(approved: boolean, approvalId?: string) {
+    if (!approvalId) return;
+    try {
+      await fetch(`${ENV.API_BASE_URL}/resume`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          threadId: approvalId,
+          approved,
+        }),
+      });
     } catch (error) {
       console.error(error);
     }
@@ -132,7 +140,6 @@ function ChatPageContent() {
 
   return (
     <main className="fixed inset-0 h-screen w-screen bg-[#050505] text-zinc-300 font-sans selection:bg-cyan-500/30 overflow-hidden flex flex-col">
-      {/* MOBILE HEADER & NAVIGATION TABS */}
       <header className="shrink-0 border-b border-zinc-800/50 p-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-black/40 backdrop-blur-md z-20">
         <div className="flex items-center justify-between w-full md:w-auto gap-2">
           <div className="flex items-center gap-3">
@@ -151,7 +158,6 @@ function ChatPageContent() {
           </div>
         </div>
 
-        {/* Dynamic Responsive Tab Controls */}
         <div className="flex lg:hidden w-full bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80">
           <button
             onClick={() => {
@@ -195,9 +201,7 @@ function ChatPageContent() {
         </div>
       </header>
 
-      {/* CORE WORKSPACE VIEW */}
       <div className="flex-1 flex w-full overflow-hidden relative">
-        {/* LEFT PANEL: WORKFLOW GRAPH */}
         <section
           className={`flex-1 flex flex-col min-w-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(6,182,212,0.02),transparent)] ${
             activeTab === "graph" ? "flex" : "hidden lg:flex"
@@ -215,9 +219,8 @@ function ChatPageContent() {
             </ReactFlow>
           </div>
 
-          {/* Bottom Execution Area */}
           <div className="shrink-0 p-4 md:p-6 bg-gradient-to-t from-black to-transparent">
-            <div className="max-w-2xl mx-auto relative group">
+            <div className="max-w-2xl mx-auto flex items-center relative group">
               <textarea
                 value={task}
                 onChange={(e) => setTask(e.target.value)}
@@ -240,17 +243,13 @@ function ChatPageContent() {
                 ) : (
                   <Send className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 )}
-                <span className="text-[9px] md:text-[10px] tracking-tighter uppercase">
-                  {loading ? "Working" : "Execute"}
-                </span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* MIDDLE PANEL: TERMINAL LOGS */}
         <aside
-          className={`w-full lg:w-[380px] xl:w-[420px] shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-800/50 bg-[#080808] flex flex-col shadow-2xl overflow-hidden ${
+          className={`w-full lg:w-[380px] xl:w-[50%] shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-800/50 bg-[#080808] flex flex-col shadow-2xl overflow-hidden ${
             activeTab === "terminal" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -264,110 +263,150 @@ function ChatPageContent() {
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-4 md:p-5 space-y-6 font-mono text-[11px] md:text-[12px] custom-scrollbar"
           >
-            {logs.map((log, index) => (
-              <div
-                key={index}
-                className="animate-in fade-in slide-in-from-right-2 duration-300"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${
-                      log.type === "error"
-                        ? "text-red-400 border-red-500/20"
-                        : "text-cyan-400 border-cyan-500/20"
-                    }`}
+            {logs.map((log, index) => {
+              if (log.type === "approval") {
+                return (
+                  <div
+                    key={index}
+                    className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-5 space-y-4 animate-in fade-in"
                   >
-                    {log.type.toUpperCase()}
-                  </span>
-                  <span className="text-[9px] text-zinc-600 italic font-sans">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-[10px] uppercase tracking-[0.25em] text-amber-400 font-bold">
+                        Approval Required
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                      {log.message}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => handleInterrupt(false, log.approvalId)}
+                        className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleInterrupt(true, log.approvalId)}
+                        className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-sm font-semibold transition-all"
+                      >
+                        Proceed
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={index}
+                  className="animate-in fade-in slide-in-from-right-2 duration-300"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${
+                        log.type === "error"
+                          ? "text-red-400 border-red-500/20"
+                          : "text-cyan-400 border-cyan-500/20"
+                      }`}
+                    >
+                      {log.type.toUpperCase()}
+                    </span>
+                    <span className="text-[9px] text-zinc-600 italic font-sans">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="pl-3 border-l border-zinc-800 markdown-content overflow-hidden break-words">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ ...props }) => (
+                          <p
+                            className="mb-2 last:mb-0 leading-relaxed text-zinc-400 whitespace-pre-wrap break-all"
+                            {...props}
+                          />
+                        ),
+                        strong: ({ ...props }) => (
+                          <strong
+                            className="text-cyan-400 font-semibold"
+                            {...props}
+                          />
+                        ),
+                        code: ({ ...props }) => (
+                          <code
+                            className="bg-zinc-800 px-1 rounded text-pink-400 break-all whitespace-pre-wrap"
+                            {...props}
+                          />
+                        ),
+                      }}
+                    >
+                      {log.message}
+                    </ReactMarkdown>
+                  </div>
                 </div>
-                <div className="pl-3 border-l border-zinc-800 markdown-content overflow-hidden break-words">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({ ...props }) => (
-                        <p
-                          className="mb-2 last:mb-0 leading-relaxed text-zinc-400 whitespace-pre-wrap break-all"
-                          {...props}
-                        />
-                      ),
-                      strong: ({ ...props }) => (
-                        <strong
-                          className="text-cyan-400 font-semibold"
-                          {...props}
-                        />
-                      ),
-                      code: ({ ...props }) => (
-                        <code
-                          className="bg-zinc-800 px-1 rounded text-pink-400 break-all whitespace-pre-wrap"
-                          {...props}
-                        />
-                      ),
-                    }}
-                  >
-                    {log.message}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
-        {/* RIGHT PANEL: MST GIT DIFF VIEW */}
-        <aside
-          className={`w-full lg:w-[480px] xl:w-[550px] shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-800/50 bg-[#050505] flex flex-col shadow-2xl overflow-hidden min-w-0 ${
-            activeTab === "diff" ? "flex" : "hidden lg:flex"
-          }`}
-        >
-          <div className="shrink-0 p-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/10">
-            <div className="flex items-center gap-2 text-emerald-500/80">
-              <GitBranch className="w-4 h-4" />
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em]">
-                Live Git Diff
-              </h2>
-            </div>
-            {diff && (
-              <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                Changes Detected
-              </span>
-            )}
-          </div>
+        {
+          // if diff is not empty show
+          diff && (
+            <aside
+              className={`w-full lg:w-[480px] xl:w-[550px] shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-800/50 bg-[#050505] flex flex-col shadow-2xl overflow-hidden min-w-0 ${
+                activeTab === "diff" ? "flex" : "hidden lg:flex"
+              }`}
+            >
+              <div className="shrink-0 p-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/10">
+                <div className="flex items-center gap-2 text-emerald-500/80">
+                  <GitBranch className="w-4 h-4" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                    Live Git Diff
+                  </h2>
+                </div>
+                {diff && (
+                  <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    Changes Detected
+                  </span>
+                )}
+              </div>
 
-          <div className="flex-1 overflow-hidden bg-[#030303] relative min-h-0 w-full">
-            {diff ? (
-              <div className="absolute inset-0 w-full h-full">
-                <DiffEditor
-                  height="100%"
-                  width="100%"
-                  language="typescript"
-                  theme="vs-dark"
-                  original={""}
-                  modified={diff}
-                  options={{
-                    renderSideBySide: false,
-                    readOnly: true,
-                    domReadOnly: true,
-                    fontSize: 11,
-                    minimap: { enabled: false },
-                    scrollbar: {
-                      verticalSliderSize: 1,
-                      horizontalSliderSize: 5,
-                    },
-                  }}
-                />
+              <div className="flex-1 overflow-hidden bg-[#030303] relative min-h-0 w-full">
+                {diff ? (
+                  <div className="absolute inset-0 w-full h-full">
+                    <DiffEditor
+                      height="100%"
+                      width="100%"
+                      language="typescript"
+                      theme="vs-dark"
+                      original={""}
+                      modified={diff}
+                      options={{
+                        renderSideBySide: false,
+                        readOnly: true,
+                        domReadOnly: true,
+                        fontSize: 11,
+                        minimap: { enabled: false },
+                        scrollbar: {
+                          verticalSliderSize: 1,
+                          horizontalSliderSize: 5,
+                        },
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center bg-[#1e1e1e] opacity-20 italic p-6">
+                    <Maximize2 className="w-8 h-8 mb-4" />
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-center">
+                      Waiting for code changes
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center bg-[#1e1e1e] opacity-20 italic p-6">
-                <Maximize2 className="w-8 h-8 mb-4" />
-                <p className="text-[10px] uppercase tracking-[0.3em] text-center">
-                  Waiting for code changes
-                </p>
-              </div>
-            )}
-          </div>
-        </aside>
+            </aside>
+          )
+        }
       </div>
 
       <style jsx global>{`
@@ -392,42 +431,10 @@ function ChatPageContent() {
           border: 1px solid #27272a !important;
         }
       `}</style>
-
-      {/* SYSTEM APPROVAL OVERLAY */}
-      {approval && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
-          <div className="w-full max-w-[550px] bg-zinc-900 border border-red-500/20 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <h2 className="text-xl md:text-2xl font-bold text-red-400">
-              Approval Required
-            </h2>
-
-            <p className="mt-4 text-xs md:text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
-              {approval.message}
-            </p>
-
-            <div className="mt-8 flex flex-row justify-end gap-3 md:gap-4">
-              <button
-                onClick={() => handleApproval(false)}
-                className="flex-1 md:flex-none px-4 py-2.5 md:px-5 md:py-3 text-xs md:text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
-              >
-                Reject
-              </button>
-
-              <button
-                onClick={() => handleApproval(true)}
-                className="flex-1 md:flex-none px-4 py-2.5 md:px-5 md:py-3 text-xs md:text-sm rounded-xl bg-red-500 text-white hover:bg-red-400 transition-colors"
-              >
-                Approve
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
 
-// 2. Wrap the sub-component with Suspense for static prerendering
 export default function HomePage() {
   return (
     <Suspense

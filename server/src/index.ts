@@ -12,6 +12,7 @@ import { runtimeEventEmitter } from "./events/eventEmitter.js";
 import { pendingApprovals } from "./runtime/approval-store.js";
 import { extractMemory } from "./memory/extract-memory.js";
 import { storeMemory } from "./memory/store-memory.js";
+import { Command } from "@langchain/langgraph";
 
 // Create a single instance of the workflow to be used across all requests
 const workflow = await createWorkflow();
@@ -54,7 +55,7 @@ app.post("/ai-team", async (c: Context) => {
 
   const config = {
     configurable: {
-      thread_id: "user-1",
+      thread_id: crypto.randomUUID(),
     },
     recursionLimit: 50,
   };
@@ -65,6 +66,20 @@ app.post("/ai-team", async (c: Context) => {
     },
     config,
   );
+
+  if (result && typeof result === "object" && "__interrupt__" in result) {
+    const interruptValue = (result as any).__interrupt__[0].value;
+
+    runtimeEventEmitter({
+      type: "approval",
+      message: interruptValue.message,
+      approvalId: config.configurable.thread_id,
+    });
+
+    return c.json({
+      success: true,
+    });
+  }
 
   console.log("\n==================");
 
@@ -143,6 +158,28 @@ app.post("/approval", async (c) => {
       500,
     );
   }
+});
+
+// resume a workflow execution that was interrupted for approval
+app.post("/resume", async (c) => {
+  const body = await c.req.json();
+
+  const result = await workflow.invoke(
+    new Command({
+      resume: body.approved,
+    }),
+
+    {
+      configurable: {
+        thread_id: body.threadId,
+      },
+    },
+  );
+
+  return c.json({
+    success: true,
+    result,
+  });
 });
 
 serve(
