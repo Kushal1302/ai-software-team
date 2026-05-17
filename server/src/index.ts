@@ -53,13 +53,15 @@ app.get("/events", (c: Context) => {
 });
 
 app.post("/ai-team", async (c: Context) => {
-  const { task } = await c.req.json();
+  const { task, threadId: existingThreadId } = await c.req.json();
 
-  // create a random thread on initial graph execution
-  const threadId = crypto.randomUUID();
+  // create a random thread on initial graph execution or use the existing one
+  const threadId = existingThreadId || crypto.randomUUID();
 
   // create the thread
-  await createThread(threadId, task);
+  if (!existingThreadId) {
+    await createThread(threadId, task);
+  }
 
   // save the message
   await saveMessage({
@@ -138,6 +140,7 @@ app.post("/ai-team", async (c: Context) => {
     retrievalContext: result.retrievalContext,
     patchHistory: result.patchHistory,
     answer: result.answer,
+    threadId: threadId,
   });
 });
 
