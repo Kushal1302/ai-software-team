@@ -1,6 +1,8 @@
 import type { BaseMessage } from "@langchain/core/messages";
 
 export interface AgentState {
+  threadId: string;
+
   // User task
   task: string;
 

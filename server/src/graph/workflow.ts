@@ -32,6 +32,9 @@ const checkpointer = await getCheckpointer();
 export async function createWorkflow() {
   const graph = new StateGraph<AgentState>({
     channels: {
+      threadId: {
+        value: (x, y) => y ?? x,
+      },
       task: {
         value: (x, y) => y ?? x,
       },

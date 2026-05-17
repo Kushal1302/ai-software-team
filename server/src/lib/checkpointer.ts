@@ -7,7 +7,7 @@ export async function getCheckpointer() {
     return checkpointer;
   }
 
-  checkpointer = PostgresSaver.fromConnString(process.env.DATABASE_URL!);
+  checkpointer = PostgresSaver.fromConnString(process.env.POSTGRES_SAVER_URL!);
 
   await checkpointer.setup();
 

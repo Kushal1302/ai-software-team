@@ -3,6 +3,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentState } from "../graph/state.js";
 import { answerModel } from "../lib/model.js";
 import { eventBus } from "../events/event-bus.js";
+import { saveMessage } from "../services/conversation.service.js";
 
 export async function answerAgent(
   state: AgentState,
@@ -19,7 +20,7 @@ export async function answerAgent(
 
   const prompt = await fs.readFile("./src/prompts/answer.txt", "utf-8");
 
-  console.log({prompt});
+  console.log({ prompt });
 
   const humanMessage = new HumanMessage(`
 QUESTION:
@@ -51,6 +52,16 @@ ${JSON.stringify(
       "Answer agent completed with answer: " + response.content.toString(),
 
     timestamp: new Date().toISOString(),
+  });
+
+  await saveMessage({
+    threadId: state.threadId,
+
+    role: "assistant",
+
+    type: "answer",
+
+    content: response.content.toString(),
   });
 
   return {

@@ -13,6 +13,8 @@ import { pendingApprovals } from "./runtime/approval-store.js";
 import { extractMemory } from "./memory/extract-memory.js";
 import { storeMemory } from "./memory/store-memory.js";
 import { Command } from "@langchain/langgraph";
+import { createThread, saveMessage } from "./services/conversation.service.js";
+import { threadRoutes } from "./routes/thread.routes.js";
 
 // Create a single instance of the workflow to be used across all requests
 const workflow = await createWorkflow();
@@ -53,9 +55,23 @@ app.get("/events", (c: Context) => {
 app.post("/ai-team", async (c: Context) => {
   const { task } = await c.req.json();
 
+  // create a random thread on initial graph execution
+  const threadId = crypto.randomUUID();
+
+  // create the thread
+  await createThread(threadId, task);
+
+  // save the message
+  await saveMessage({
+    threadId,
+    role: "user",
+    type: "task",
+    content: task,
+  });
+
   const config = {
     configurable: {
-      thread_id: crypto.randomUUID(),
+      thread_id: threadId,
     },
     recursionLimit: 50,
   };
@@ -63,12 +79,20 @@ app.post("/ai-team", async (c: Context) => {
   const result = await workflow.invoke(
     {
       task,
+      threadId,
     },
     config,
   );
 
   if (result && typeof result === "object" && "__interrupt__" in result) {
     const interruptValue = (result as any).__interrupt__[0].value;
+
+    await saveMessage({
+      threadId,
+      role: "system",
+      type: "approval",
+      content: interruptValue.message,
+    });
 
     runtimeEventEmitter({
       type: "approval",
@@ -168,7 +192,6 @@ app.post("/resume", async (c) => {
     new Command({
       resume: body.approved,
     }),
-
     {
       configurable: {
         thread_id: body.threadId,
@@ -181,6 +204,9 @@ app.post("/resume", async (c) => {
     result,
   });
 });
+
+// thread routes
+app.route("/threads", threadRoutes);
 
 serve(
   {
