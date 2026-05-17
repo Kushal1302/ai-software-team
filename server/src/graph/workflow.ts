@@ -23,9 +23,11 @@ import { intentClassifierAgent } from "../agents/intent-classifier.js";
 import { answerAgent } from "../agents/answer.js";
 import { changeSummaryAgent } from "../agents/change-summary.js";
 import { intentRouter } from "./intent-router.js";
+import { getCheckpointer } from "../lib/checkpointer.js";
 
 // Initialize a single instance of MemorySaver to be used across the workflow
 const memory = new MemorySaver();
+const checkpointer = await getCheckpointer();
 
 export async function createWorkflow() {
   const graph = new StateGraph<AgentState>({
@@ -106,6 +108,6 @@ export async function createWorkflow() {
     .addConditionalEdges("tools", toolReturnRouter);
 
   return graph.compile({
-    checkpointer: memory,
+    checkpointer,
   });
 }
