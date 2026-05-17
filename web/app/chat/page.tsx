@@ -26,6 +26,7 @@ import { DiffEditor } from "@monaco-editor/react";
 import { ENV } from "@/lib/env";
 import { updateNodes } from "@/lib/update-nodes";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Thread } from "@/types/thread";
 
 type ActiveTabType = "graph" | "terminal" | "diff";
 
@@ -38,6 +39,8 @@ function ChatPageContent() {
   const [diff, setDiff] = useState("");
   const [edges, setEdges] = useState<Edge[]>([]);
   const [approval, setApproval] = useState<RuntimeEvent | null>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threadId, setThreadId] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,6 +77,26 @@ function ChatPageContent() {
     return () => eventSource.close();
   }, []);
 
+  async function loadThreads() {
+    const response = await fetch(`${ENV.API_BASE_URL}/threads`);
+
+    const data = await response.json();
+
+    setThreads(data.threads);
+  }
+
+  useEffect(() => {
+    async function loadThreads() {
+      const response = await fetch(`${ENV.API_BASE_URL}/threads`);
+
+      const data = await response.json();
+
+      setThreads(data.threads);
+    }
+
+    loadThreads();
+  }, []);
+
   useEffect(() => {
     async function loadGraph() {
       const response = await fetch(`${ENV.API_BASE_URL}/graph`);
@@ -88,11 +111,15 @@ function ChatPageContent() {
     if (!task || loading) return;
     setLoading(true);
     try {
-      await fetch(`${ENV.API_BASE_URL}/ai-team`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/ai-team`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({ task, threadId }),
       });
+
+      const data = await response.json();
+      setThreadId(data.threadId);
+      await loadThreads();
       setTask("");
     } catch (e) {
       console.error(e);
@@ -201,7 +228,45 @@ function ChatPageContent() {
         </div>
       </header>
 
-      <div className="flex-1 flex w-full overflow-hidden relative">
+      <div className="flex-1 flex w-full overflow-hidden">
+        <aside className="hidden lg:flex w-[280px] shrink-0 border-r border-zinc-800/50 bg-[#080808] flex-col">
+          <div className="p-4 border-b border-zinc-800/50">
+            <button
+              onClick={() => {
+                setThreadId("");
+                setLogs([]);
+                setTask("");
+              }}
+              className="w-full bg-white text-black rounded-xl  py-3  text-sm font-semibold hover:bg-zinc-200transition-all"
+            >
+              + New Task
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {threads.map((thread) => (
+              <button
+                key={thread.id}
+                onClick={() => setThreadId(thread.id)}
+                className={`w-full text-left rounded-xl p-3 transition-all border ${threadId === thread.id ? ` bg-cyan-500/10 border-cyan-500/30` : ` bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 `}`}
+              >
+                <div className="text-sm font-medium text-zinc-200 truncate">
+                  {thread.task}
+                </div>
+
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">
+                    {thread.status}
+                  </span>
+
+                  <span className="text-[10px] text-zinc-600">
+                    {new Date(thread.updatedAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </aside>
         <section
           className={`flex-1 flex flex-col min-w-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(6,182,212,0.02),transparent)] ${
             activeTab === "graph" ? "flex" : "hidden lg:flex"
