@@ -1,10 +1,14 @@
-# AI Software Team 
+# AI Software Team
 
 An autonomous multi-agent AI software engineering runtime built with LangGraph, TypeScript, Hono, ReactFlow, and real-time orchestration visualization.
 
 This project simulates a real AI engineering organization where specialized agents collaborate to analyze repositories, retrieve code context, modify implementations, validate changes, and stream runtime activity live to the UI.
 
 ---
+
+## System Architecture
+
+![System Design](./assets/system-design.svg)
 
 # Features
 
@@ -227,13 +231,7 @@ The system continuously learns from previous executions.
 The runtime streams events in real-time:
 
 ```ts
-type RuntimeEvent =
-  | "agent"
-  | "tool"
-  | "terminal"
-  | "diff"
-  | "approval"
-  | "log";
+type RuntimeEvent = "agent" | "tool" | "terminal" | "diff" | "approval" | "log";
 ```
 
 These events power:
@@ -391,4 +389,4 @@ Always review AI-generated code before production usage.
 
 # If you like this project
 
-Star the repository and explore autonomous AI engineering systems 
+Star the repository and explore autonomous AI engineering systems
